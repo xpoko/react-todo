@@ -1,22 +1,23 @@
 import { FILTER_VALUE } from "../constant";
+import { useFilterStore, useListStore } from "../store";
 
 export interface FooterProps {
-  remainingListLength: number;
-  handleFilter: (event: any) => void;
-  handleClearComplete: () => void;
   filterValue: string;
 }
 
-const Footer = ({
-  remainingListLength,
-  handleFilter,
-  handleClearComplete,
-  filterValue,
-}: FooterProps) => {
+const Footer = ({ filterValue }: FooterProps) => {
+  const { todoList, handleClearComplete } = useListStore();
+
+  const remainingListLength = todoList.filter(
+    (item) => item.state === FILTER_VALUE.ACTIVE
+  ).length;
+
+  const { handleFilter } = useFilterStore();
+
   return (
-    <footer className="footer" data-testid="footer">
+    <footer className="footer">
       <span className="todo-count">{remainingListLength} items left!</span>
-      <ul className="filters" data-testid="footer-navigation">
+      <ul className="filters">
         <li>
           <a
             className={filterValue === FILTER_VALUE.ALL ? "selected" : ""}
