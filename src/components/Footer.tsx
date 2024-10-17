@@ -5,20 +5,20 @@ import { useFilterStore, useListStore } from "../store";
 const Footer = () => {
   console.log("rerender footer");
 
-  const { todoList, getRemainingItemLength, handleClearComplete } =
+  const { todoListLength, activeListLength, handleClearComplete } =
     useListStore(
       useShallow((state) => ({
-        todoList: state.todoList,
-        getRemainingItemLength: state.getRemainingItemLength,
+        todoListLength: state.todoListLength,
+        activeListLength: state.activeListLength,
         handleClearComplete: state.handleClearComplete,
       }))
     );
 
   const { filterValue, handleFilter } = useFilterStore();
 
-  return todoList.length > 0 ? (
+  return todoListLength > 0 ? (
     <footer className="footer">
-      <span className="todo-count">{getRemainingItemLength()} items left!</span>
+      <span className="todo-count">{activeListLength} items left!</span>
       <ul className="filters">
         <li>
           <a
