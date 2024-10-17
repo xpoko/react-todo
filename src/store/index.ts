@@ -1,14 +1,17 @@
 import { create } from "zustand";
-import { TodoItem, TodoItemType } from "../models/model";
+import { TodoItemType } from "../models/model";
 import { FILTER_VALUE } from "../constant";
 
 interface TodoListState {
   todoList: TodoItemType[];
+  todoListLength: number;
+  getRemainingItemLength: () => number;
   handleInput: (event: any, item?: TodoItemType) => boolean;
   handleClearComplete: () => void;
   toggleAllItemState: () => void;
   toggleItemState: (item: TodoItemType) => void;
   removeItem: (item: TodoItemType) => void;
+  updateTodoList: (newTodoList: TodoItemType[]) => void;
 }
 interface FilterValueState {
   filterValue: string;
@@ -48,8 +51,17 @@ export const useFilterStore = create<FilterValueState>((set) => ({
   },
 }));
 
-export const useListStore = create<TodoListState>((set) => ({
+export const useListStore = create<TodoListState>((set, get) => ({
   todoList: initialTodoList,
+  todoListLength: initialTodoList.length,
+  getRemainingItemLength: () =>
+    get().todoList.filter((item) => item.state === FILTER_VALUE.ACTIVE).length,
+  updateTodoList: (newTodoList: TodoItemType[]) => {
+    set(() => {
+      updateLocalStorage(newTodoList);
+      return { todoList: newTodoList };
+    });
+  },
   handleInput: (event: any, updatingItem?: TodoItemType) => {
     const key = event.code;
 
@@ -60,22 +72,23 @@ export const useListStore = create<TodoListState>((set) => ({
         return true;
       }
 
+      let newTodoList;
+
       if (updatingItem) {
-        set((state) => {
-          const newTodoList = state.todoList.map((item) =>
-            updatingItem === item ? { ...item, name: newName } : item
-          );
-          updateLocalStorage(newTodoList);
-          return { todoList: newTodoList };
-        });
+        newTodoList = get().todoList.map((item) =>
+          updatingItem === item ? { ...item, name: newName } : item
+        );
       } else {
-        const item = TodoItem(newName, FILTER_VALUE.ACTIVE);
-        set((state) => {
-          const newTodoList = [...state.todoList, item];
-          updateLocalStorage(newTodoList);
-          return { todoList: newTodoList };
-        });
+        newTodoList = [
+          ...get().todoList,
+          {
+            name: newName,
+            state: FILTER_VALUE.ACTIVE,
+          },
+        ];
       }
+
+      get().updateTodoList(newTodoList);
 
       event.target.value = "";
       return true;
@@ -84,59 +97,45 @@ export const useListStore = create<TodoListState>((set) => ({
   },
   toggleAllItemState: () => {
     let newTodoList;
-    set((state) => {
-      if (
-        state.todoList.filter((item) => item.state === FILTER_VALUE.ACTIVE)
-          .length > 0
-      ) {
-        newTodoList = state.todoList.map(
-          (newItem) => (newItem = { ...newItem, state: FILTER_VALUE.COMPLETED })
-        );
-      } else {
-        newTodoList = state.todoList.map(
-          (newItem) => (newItem = { ...newItem, state: FILTER_VALUE.ACTIVE })
-        );
-      }
+    if (
+      get().todoList.filter((item) => item.state === FILTER_VALUE.ACTIVE)
+        .length > 0
+    ) {
+      newTodoList = get().todoList.map(
+        (newItem) => (newItem = { ...newItem, state: FILTER_VALUE.COMPLETED })
+      );
+    } else {
+      newTodoList = get().todoList.map(
+        (newItem) => (newItem = { ...newItem, state: FILTER_VALUE.ACTIVE })
+      );
+    }
 
-      updateLocalStorage(newTodoList);
-      return { todoList: newTodoList };
-    });
+    get().updateTodoList(newTodoList);
   },
   toggleItemState: (item: TodoItemType) => {
-    set((state) => {
-      const itemIndex = state.todoList.indexOf(item);
+    const itemIndex = get().todoList.indexOf(item);
 
-      if (item.state === FILTER_VALUE.ACTIVE) {
-        state.todoList[itemIndex].state = FILTER_VALUE.COMPLETED;
-      } else {
-        state.todoList[itemIndex].state = FILTER_VALUE.ACTIVE;
-      }
-      const newTodoList = [...state.todoList];
-      updateLocalStorage(newTodoList);
-      return { todoList: newTodoList };
-    });
+    if (item.state === FILTER_VALUE.ACTIVE) {
+      get().todoList[itemIndex].state = FILTER_VALUE.COMPLETED;
+    } else {
+      get().todoList[itemIndex].state = FILTER_VALUE.ACTIVE;
+    }
+    const newTodoList = [...get().todoList];
+    get().updateTodoList(newTodoList);
   },
   removeItem: (item: TodoItemType) => {
-    set((state) => {
-      const newTodoList = state.todoList.filter(
-        (newItemList) => newItemList !== item
-      );
-      updateLocalStorage(newTodoList);
-      return { todoList: newTodoList };
-    });
+    const newTodoList = get().todoList.filter(
+      (newItemList) => newItemList !== item
+    );
+    get().updateTodoList(newTodoList);
   },
   handleClearComplete: () => {
-    set((state) => {
-      const newTodoList = state.todoList.filter(
-        (item) => item.state !== FILTER_VALUE.COMPLETED
-      );
+    const newTodoList = get().todoList.filter(
+      (item) => item.state !== FILTER_VALUE.COMPLETED
+    );
 
-      if (newTodoList.length !== state.todoList.length) {
-        updateLocalStorage(newTodoList);
-        return { todoList: newTodoList };
-      } else {
-        return state;
-      }
-    });
+    if (newTodoList.length !== get().todoList.length) {
+      get().updateTodoList(newTodoList);
+    }
   },
 }));

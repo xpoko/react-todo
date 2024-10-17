@@ -1,18 +1,18 @@
 import { FILTER_VALUE } from "../constant";
-import { useListStore } from "../store";
+import { useFilterStore, useListStore } from "../store";
 import ListItem from "./ListItem";
 
-export interface MainProps {
-  filterValue: string;
-}
 
-const Main = ({ filterValue }: MainProps) => {
+const Main = () => {
+  console.log("rerender main");
   const { todoList, toggleAllItemState } = useListStore();
+  const { filterValue } = useFilterStore();
 
   const displayList = todoList.filter(
     (item) => filterValue === FILTER_VALUE.ALL || item.state === filterValue
   );
-  return (
+
+  return todoList.length > 0 ? (
     <main className="main">
       <div className="toggle-all-container">
         <input
@@ -30,7 +30,7 @@ const Main = ({ filterValue }: MainProps) => {
         ))}
       </ul>
     </main>
-  );
+  ): null;
 };
 
 export default Main;

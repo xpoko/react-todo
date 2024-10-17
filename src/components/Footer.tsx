@@ -1,22 +1,24 @@
+import { useShallow } from "zustand/shallow";
 import { FILTER_VALUE } from "../constant";
 import { useFilterStore, useListStore } from "../store";
 
-export interface FooterProps {
-  filterValue: string;
-}
+const Footer = () => {
+  console.log("rerender footer");
 
-const Footer = ({ filterValue }: FooterProps) => {
-  const { todoList, handleClearComplete } = useListStore();
+  const { todoList, getRemainingItemLength, handleClearComplete } =
+    useListStore(
+      useShallow((state) => ({
+        todoList: state.todoList,
+        getRemainingItemLength: state.getRemainingItemLength,
+        handleClearComplete: state.handleClearComplete,
+      }))
+    );
 
-  const remainingListLength = todoList.filter(
-    (item) => item.state === FILTER_VALUE.ACTIVE
-  ).length;
+  const { filterValue, handleFilter } = useFilterStore();
 
-  const { handleFilter } = useFilterStore();
-
-  return (
+  return todoList.length > 0 ? (
     <footer className="footer">
-      <span className="todo-count">{remainingListLength} items left!</span>
+      <span className="todo-count">{getRemainingItemLength()} items left!</span>
       <ul className="filters">
         <li>
           <a
@@ -50,7 +52,7 @@ const Footer = ({ filterValue }: FooterProps) => {
         Clear completed
       </button>
     </footer>
-  );
+  ) : null;
 };
 
 export default Footer;

@@ -1,13 +1,12 @@
+import { useShallow } from "zustand/react/shallow";
 import "./App.css";
 import Footer from "./components/Footer";
 import Main from "./components/Main";
-import { useFilterStore, useListStore } from "./store";
+import { useListStore } from "./store";
 
 const App = () => {
   console.log("rerender");
-  const { filterValue } = useFilterStore();
-  const { todoList, handleInput } = useListStore();
-  const displayTodoList = todoList.length > 0;
+  const handleInput = useListStore(useShallow((state) => state.handleInput));
 
   return (
     <div className="App">
@@ -27,8 +26,8 @@ const App = () => {
           </label>
         </div>
       </header>
-      {displayTodoList && <Main filterValue={filterValue}></Main>}
-      {displayTodoList && <Footer filterValue={filterValue}></Footer>}
+      <Main></Main>
+      <Footer></Footer>
     </div>
   );
 };
