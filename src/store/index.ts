@@ -13,7 +13,11 @@ interface TodoListState {
   updateActiveListLength: () => void;
   toggleItemState: (item: TodoItemType) => void;
   removeItem: (item: TodoItemType) => void;
-  updateTodoList: (newTodoList: TodoItemType[]) => void;
+  updateTodoList: (
+    newTodoList: TodoItemType[],
+    shouldUpdateListLength?: boolean,
+    shouldUpdateActiveListLength?: boolean
+  ) => void;
 }
 interface FilterValueState {
   filterValue: string;
@@ -59,12 +63,6 @@ export const useListStore = create<TodoListState>((set, get) => ({
   activeListLength: initialTodoList.filter(
     (item) => item.state === FILTER_VALUE.ACTIVE
   ).length,
-  updateTodoList: (newTodoList: TodoItemType[]) => {
-    set(() => {
-      updateLocalStorage(newTodoList);
-      return { todoList: newTodoList };
-    });
-  },
   updateListLength: () => {
     set(() => {
       return { todoListLength: get().todoList.length };
@@ -78,6 +76,24 @@ export const useListStore = create<TodoListState>((set, get) => ({
         ).length,
       };
     });
+  },
+  updateTodoList: (
+    newTodoList: TodoItemType[],
+    shouldUpdateListLength = false,
+    shouldUpdateActiveList = false
+  ) => {
+    set(() => {
+      updateLocalStorage(newTodoList);
+      return { todoList: newTodoList };
+    });
+
+    if (shouldUpdateListLength) {
+      get().updateListLength();
+    }
+
+    if (shouldUpdateActiveList) {
+      get().updateActiveListLength();
+    }
   },
   handleInput: (event: any, updatingItem?: TodoItemType) => {
     const key = event.code;
@@ -105,9 +121,7 @@ export const useListStore = create<TodoListState>((set, get) => ({
         ];
       }
 
-      get().updateTodoList(newTodoList);
-
-      if (!updatingItem) get().updateListLength();
+      get().updateTodoList(newTodoList, !updatingItem, !updatingItem);
 
       event.target.value = "";
       return true;
@@ -129,8 +143,7 @@ export const useListStore = create<TodoListState>((set, get) => ({
       );
     }
 
-    get().updateTodoList(newTodoList);
-    get().updateActiveListLength();
+    get().updateTodoList(newTodoList, false, true);
   },
   toggleItemState: (item: TodoItemType) => {
     const itemIndex = get().todoList.indexOf(item);
@@ -141,15 +154,13 @@ export const useListStore = create<TodoListState>((set, get) => ({
       get().todoList[itemIndex].state = FILTER_VALUE.ACTIVE;
     }
     const newTodoList = [...get().todoList];
-    get().updateTodoList(newTodoList);
-    get().updateActiveListLength();
+    get().updateTodoList(newTodoList, false, true);
   },
   removeItem: (item: TodoItemType) => {
     const newTodoList = get().todoList.filter(
       (newItemList) => newItemList !== item
     );
-    get().updateTodoList(newTodoList);
-    get().updateListLength();
+    get().updateTodoList(newTodoList, true, true);
   },
   handleClearComplete: () => {
     const newTodoList = get().todoList.filter(
@@ -157,9 +168,7 @@ export const useListStore = create<TodoListState>((set, get) => ({
     );
 
     if (newTodoList.length !== get().todoList.length) {
-      get().updateTodoList(newTodoList);
-      get().updateActiveListLength();
-      get().updateListLength();
+      get().updateTodoList(newTodoList, true, true);
     }
   },
 }));
